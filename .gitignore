@@ -1,0 +1,8 @@
+﻿data/
+.Rhistory
+*.csv
+*.xlsx
+*.profile
+*.pheno
+*.tif
+*.txt
