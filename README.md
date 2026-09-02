@@ -1,4 +1,4 @@
-﻿# Analysis code for the manuscript: "Genetic liability for Parkinson's disease shapes subcortical brain structure in youth cohorts aged 8-30 years"
+﻿# Analysis code
 
 This repository contains the custom analytical pipeline used to investigate the association between Parkinson's disease polygenic risk scores (PRS) and subcortical brain volumes in the ABCD and QTIM youth cohorts.
 
