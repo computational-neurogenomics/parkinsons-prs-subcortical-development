@@ -6,3 +6,5 @@
 *.pheno
 *.tif
 *.txt
+
+ABCD_analysis/3_abcd_combat_comparative_table.py

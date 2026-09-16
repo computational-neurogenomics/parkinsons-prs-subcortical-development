@@ -205,7 +205,11 @@ ct_model2 <- ct_model2 %>%
 get_icv_improvement_safe <- function(data, roi, prs_col, PCcovarStr) {
   tryCatch({
     base_cov <- "Sex + Age + Sex:Age + I(Age^2) + Sex:I(Age^2) +"
-    red_fe  <- paste(base_cov, PCcovarStr)
+    
+    # 1. El modelo reducido incluye el PRS (sin ICV)
+    red_fe  <- paste(prs_col, "+", base_cov, PCcovarStr)
+    
+    # 2. El modelo completo añade únicamente ICV
     full_fe <- paste(prs_col, "+ ICV +", base_cov, PCcovarStr)
     
     f_red  <- as.formula(paste0(roi, " ~ ", red_fe,  "+ (1|FID)"))
@@ -214,37 +218,43 @@ get_icv_improvement_safe <- function(data, roi, prs_col, PCcovarStr) {
     m_red  <- lmer(f_red,  data = data, REML = FALSE)
     m_full <- lmer(f_full, data = data, REML = FALSE)
     
-    # marginal R2 (Nakagawa)
-    r2_red  <- r2_nakagawa(m_red)$R2_marginal
-    r2_full <- r2_nakagawa(m_full)$R2_marginal
+    # R2 marginal (Nakagawa)
+    r2_red   <- r2_nakagawa(m_red)$R2_marginal
+    r2_full  <- r2_nakagawa(m_full)$R2_marginal
     delta_r2 <- r2_full - r2_red
     
-    LRT <- anova(m_red, m_full)
-    chi2  <- LRT$Chisq[2]
-    pval  <- LRT$`Pr(>Chisq)`[2]
+    # Prueba de razón de verosimilitud (LRT)
+    LRT    <- anova(m_red, m_full)
+    chi2   <- LRT$Chisq[2]
+    df_val <- if ("Chi Df" %in% names(LRT)) LRT$`Chi Df`[2] else LRT$Df[2]
+    pval   <- LRT$`Pr(>Chisq)`[2]
     
     tibble(
-      ROI            = roi,
-      R2_without_ICV = r2_red * 100,
-      R2_with_ICV    = r2_full * 100,
-      Delta_R2       = delta_r2 * 100,
-      Chi2           = chi2,
-      p              = pval
+      ROI                = roi,
+      R2_without_ICV     = r2_red * 100,
+      R2_with_ICV        = r2_full * 100,
+      Delta_R2           = delta_r2 * 100,
+      Chi2               = chi2,
+      Degrees_of_freedom = df_val,
+      P_value            = pval
     )
   }, error = function(e){
     message(sprintf("Warning: ROI %s failed with error: %s", roi, e$message))
     tibble(
-      ROI            = roi,
-      R2_without_ICV = NA_real_,
-      R2_with_ICV    = NA_real_,
-      Delta_R2       = NA_real_,
-      Chi2           = NA_real_,
-      p              = NA_real_
+      ROI                = roi,
+      R2_without_ICV     = NA_real_,
+      R2_with_ICV        = NA_real_,
+      Delta_R2           = NA_real_,
+      Chi2               = NA_real_,
+      Degrees_of_freedom = NA_real_,
+      P_value            = NA_real_
     )
   })
 }
 
-improvements <- map_dfr(RoiCodes, ~ get_icv_improvement_safe(QTIMphenos, .x, prs_col = "PDPRS", PCcovarStr = PCcovarStr))
+# Ejecutar únicamente sobre las 9 estructuras subcorticales (excluyendo ICV)
+subcortical_rois <- setdiff(RoiCodes, "ICV")
+improvements <- map_dfr(subcortical_rois, ~ get_icv_improvement_safe(QTIMphenos, .x, prs_col = "PDPRS", PCcovarStr = PCcovarStr))
 print(improvements)
 
 # ==============================================================================
@@ -276,3 +286,4 @@ writeData(wb, "ICV_sensitivity", improvements)
 
 saveWorkbook(wb, file = paste0(output_dir, "QTIM_models_rsqmarg_results.xlsx"), overwrite = TRUE)
 print("All QTIM analyses completed.")
+

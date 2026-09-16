@@ -54,12 +54,15 @@ pheno_data <- reduce(data_list, function(x, y) full_join(x, y, by = c("IID")))
 merged_df <- prs_df %>%
   full_join(pheno_data, by = "IID")
 
+cat("\n---> INITIAL NUMBER OF INDIVIDUALS:", nrow(merged_df), "<---\n\n")
+
 # ==============================================================================
 # 6. FORMATTING MERGED DATASET
 # ==============================================================================
 merged_df <- merged_df %>%
   # we select all variable sof interest + all columns srarting with "ScannerID_"
   select(all_of(c('IID', 'Sex', 'Age', phenotypes_list, PCs, PRS)), starts_with("ScannerID_"))%>% #Select columns of interest
+  filter(Sex != 3) %>%
   na.omit() %>% # drop NAs
   rename(PDPRS=SbR)# SBayesR scores
 
@@ -147,10 +150,12 @@ sapply(c(phenotypes_list, PRS), function(var) {
 
 # NON HARMONISED RESULTS 
 merged_df <- na.omit(merged_df)
+cat("\n---> FINAL NUMBER OF INDIVIDUALS (Non-Harmonised):", nrow(merged_df), "<---\n")
 write.csv(merged_df, file = paste0(output_file), row.names = FALSE)
 
 # NeurocomBAT HARMONISED RESULTS 
 merged_df_neurocombat <- na.omit(merged_df_neurocombat)
+cat("---> FINAL NUMBER OF INDIVIDUALS (Harmonised):", nrow(merged_df_neurocombat), "<---\n\n")
 write.csv(merged_df_neurocombat, file = paste0(harmonised_output_file), row.names = FALSE)
 
 

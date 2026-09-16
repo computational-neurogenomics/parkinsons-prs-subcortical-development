@@ -55,6 +55,8 @@ merged_df <- pheno_data %>%
   full_join(sbayes_df, by = "IID") %>%
   full_join(pc_data, by = "IID")
 
+cat("\n---> INITIAL NUMBER OF INDIVIDUALS:", nrow(merged_df), "<---\n\n")
+
 # ==============================================================================
 # 6. FORMAT FINAL DATAFRAME
 # ==============================================================================
@@ -106,7 +108,9 @@ for (i in PRS){
 # ==============================================================================
 
 merged_df <- na.omit(merged_df)
+cat("\n---> FINAL NUMBER OF INDIVIDUALS:", nrow(merged_df), "<---\n\n")
 
 # Exporting specifically to link with the regression script
 write.csv(merged_df, file = output_file, row.names = FALSE)
 print("QTIM data preprocessed.")
+
